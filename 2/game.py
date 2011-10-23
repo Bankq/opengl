@@ -65,6 +65,10 @@ bombs = list()
 
 
 def main():
+	
+	print "---------Bank------------"
+	
+	
     glutInit(sys.argv)
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB)
     glutInitWindowSize(UNIT_WIDTH,UNIT_HEIGHT)
