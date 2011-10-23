@@ -65,10 +65,7 @@ bombs = list()
 
 
 def main():
-	
-	print "---------Bank------------"
-	
-	
+    print "---------Bank------------"
     glutInit(sys.argv)
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB)
     glutInitWindowSize(UNIT_WIDTH,UNIT_HEIGHT)
@@ -115,7 +112,7 @@ def init():
     #initial time
     if len(sys.argv) > 1:
         global time
-        time = sys.argv[1]
+        time = int(sys.argv[1])
     
                   
                                      
@@ -166,7 +163,8 @@ def display_info():
 
 def draw_bomb(thing):
     glPushMatrix()
-    glColor3f(thing.level*0.2,thing.level*0.2,thing.level*0.2)
+#    glColor3f(thing.level*0.2,thing.level*0.2,thing.level*0.2)
+    glColor4f(0,0,0,1-thing.level*0.2)
     half_width = 0.02 * UNIT_WIDTH
     half_height = 0.02 * UNIT_HEIGHT
 
@@ -201,7 +199,13 @@ def draw_thing(thing):
     glVertex2f(thing.px - half_width, thing.py - half_height)
     
     glEnd()
-    glFlush()
+    
+    
+    glColor3f(0,0,0)
+    glRasterPos2f(thing.px-5,thing.py-5)
+    for c in list( str(thing.level) ):
+        glutBitmapCharacter( GLUT_BITMAP_HELVETICA_12,ord(c))
+    glFlush()   
 
     glPopMatrix()
 
@@ -248,9 +252,14 @@ def mouse(button,state,x,y):
 
 
 def timer(id):
+    global game_state
+    global time
     if game_state == 0:
-        move()  
-
+        move() 
+    if time <= 0 :
+        # TIME UP
+        game_state = 1 
+        time = "TIME UP!"
     glutPostRedisplay()
     glutTimerFunc(100,timer,0)
 
@@ -261,8 +270,9 @@ def move():
     global score
     global time
 
-    time -= 1
 
+    time -= 1
+   
     for level_list in things:
         for thing in level_list:
             # move every thing
@@ -284,20 +294,20 @@ def move():
                     
 
 def border_check(thing):
-        if thing.px + thing.vx > UNIT_WIDTH:
-            thing.px = UNIT_WIDTH + ( UNIT_WIDTH - thing.px)
+        if thing.px + thing.vx + 0.05 * UNIT_WIDTH > UNIT_WIDTH:
+            thing.px = 1.9 * UNIT_WIDTH - thing.px
             thing.vx = -thing.vx
 
-        if thing.px + thing.vx < 0:
-            thing.px = -thing.px
+        if thing.px + thing.vx - 0.05 * UNIT_WIDTH < 0:
+            thing.px = 0.1 * UNIT_WIDTH-thing.px
             thing.vx = -thing.vx
 
-        if thing.py + thing.vy > UNIT_HEIGHT:
-            thing.py = UNIT_HEIGHT + ( UNIT_HEIGHT - thing.py)
+        if thing.py + thing.vy + 0.05 * UNIT_HEIGHT > UNIT_HEIGHT:
+            thing.py = 1.9 * UNIT_HEIGHT - thing.py
             thing.vy = -thing.vy
 
-        if thing.py + thing.vy < 0:
-            thing.py = -thing.py
+        if thing.py + thing.vy - 0.05 * UNIT_HEIGHT < 0:
+            thing.py = 0.1 * UNIT_HEIGHT - thing.py
             thing.vy = -thing.vy
             
             
@@ -311,7 +321,7 @@ def console_output():
     for same_level_list in things:
         print "- - - - - - - - - - - -"
         for thing in same_level_list:
-            print "|","---" * (thing.level), "> X: ",thing.px," , Y: ",thing.py
+            print "|","---" * (thing.level), "> X: ", thing.px, " , Y: ",thing.py, " | VX: ",thing.vx," , VY: ", thing.vy
     print "---------------------------"
     print "Bombs"
     print ""
