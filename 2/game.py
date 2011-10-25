@@ -88,8 +88,6 @@ def init():
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
 
-
-
     glClearColor(1,1,1,1)
     glShadeModel(GL_SMOOTH)   
     
