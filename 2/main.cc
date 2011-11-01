@@ -28,6 +28,8 @@
 #define NUM_LEVEL 5
 #define NUM_LEVEL_THING 4
 
+
+
 using namespace std;
 
 
@@ -47,7 +49,7 @@ struct ColorVec thing_color[5];
 
 
 const int score_table[6] = { -4000, -2000, -1000, 1000, 2000, -100};
-
+const float shrink_rate[5] = { 1, 0.9, 0.8, 0.7, 0.6};
 
 
 vector< vector<Thing*> > things;
@@ -64,10 +66,12 @@ void timer(int);
 void init_things();
 void debug();
 void init_color_table();
+void draw_border();
 void draw_thing(Thing*);
 void draw_bomb(Bomb*);
 void move();
-void border_check(Thing*);
+bool hit_check(Bomb*, Thing*);
+
 
 int main( int argc, char** argv) {
 
@@ -137,7 +141,7 @@ void init_things(){
   for( int i = 0 ; i < NUM_LEVEL ; i++){
     vector<Thing*> level_things;
     for( int j = 0 ; j < NUM_LEVEL_THING ; j++){
-      Thing* thing = new Thing(i,UNIT_WIDTH,UNIT_HEIGHT);
+      Thing* thing = new Thing(i);
       level_things.push_back(thing);
     }
     things.push_back(level_things);
@@ -149,17 +153,23 @@ void init_things(){
 void display(){
   glClear(GL_COLOR_BUFFER_BIT);
   //cout << "IN DISPLAY" << endl;
-  //draw things
+
+  // draw border
+  draw_border();
+
+  // draw things
   vector< vector<Thing*> >::reverse_iterator ri;
   vector<Thing*>::iterator j;
   vector<Bomb*>::iterator b;
   for(ri = things.rbegin(); ri != things.rend(); ++ri){
     for( j = (*ri).begin(); j != (*ri).end(); ++j){
-      draw_thing(*j);
+      if((*j)->get_state() != DEAD)
+        draw_thing(*j);
       for( b = bombs.begin(); b != bombs.end(); ++b){
         if( (*b)->get_level() == (*j)->get_level() ){
           //if there are bombs on the same level
-          draw_bomb(*b);
+          if((*b)->get_state() != DEAD && (*b)->get_level() != -1 )
+            draw_bomb(*b);
         }
       }   
     } 
@@ -171,6 +181,58 @@ void display(){
   
 }
 
+void draw_border(){
+  glPushMatrix();
+  int line_width = 5;// 5px line width
+  for ( int i = 0 ; i < 5 ; i++){
+    float new_origin_x = 0.5 * ( 1 - shrink_rate[i]) * UNIT_WIDTH;
+    float new_origin_y = 0.5 * ( 1 - shrink_rate[i]) * UNIT_HEIGHT;
+    float new_width = UNIT_WIDTH * shrink_rate[i];
+    float new_height = UNIT_HEIGHT * shrink_rate[i];
+    glBegin(GL_QUADS);
+      if(i == 0)
+        glColor3f(0.0,0.0,0.0);
+      else
+        glColor3f(0.75,0.75,0.75);
+      glVertex2f(new_origin_x, new_origin_y);
+      glVertex2f(new_origin_x + new_width, new_origin_y);
+      glVertex2f(new_origin_x + new_width, new_origin_y + new_height);
+      glVertex2f(new_origin_x, new_origin_y + new_height);
+    glEnd();
+
+    glBegin(GL_QUADS);
+      if( i == 4)
+        glColor3f(1.0,1.0,1.0);
+      else
+        glColor3f(0.7,0.7,0.7);
+      glVertex2f(new_origin_x + line_width, new_origin_y + line_width);
+      glVertex2f(new_origin_x + new_width - line_width, new_origin_y + line_width);
+      glVertex2f(new_origin_x + new_width - line_width, new_origin_y + new_height - line_width);
+      glVertex2f(new_origin_x + line_width, new_origin_y + new_height - line_width);
+    glEnd();
+  }
+  
+  glColor3f(0.0,0.0,0.0);
+  glBegin(GL_LINES);
+    glVertex2f(0.0,0.0);
+    glVertex2f(0.5 * ( 1 - shrink_rate[4]) * UNIT_WIDTH + line_width, 
+               0.5 * ( 1 - shrink_rate[4]) * UNIT_HEIGHT + line_width);
+
+    glVertex2f(0.0,UNIT_HEIGHT);
+    glVertex2f(0.5 * ( 1 - shrink_rate[4]) * UNIT_WIDTH + line_width, 
+               UNIT_HEIGHT - 0.5 * ( 1 - shrink_rate[4]) * UNIT_HEIGHT - line_width);
+
+    glVertex2f(UNIT_WIDTH,UNIT_HEIGHT);
+    glVertex2f(UNIT_WIDTH - 0.5 * ( 1 - shrink_rate[4]) * UNIT_WIDTH - line_width, 
+               UNIT_HEIGHT - 0.5 * ( 1 - shrink_rate[4]) * UNIT_HEIGHT - line_width);
+
+    glVertex2f(UNIT_WIDTH,0);
+    glVertex2f(UNIT_WIDTH - 0.5 * ( 1 - shrink_rate[4]) * UNIT_WIDTH - line_width, 
+               0.5 * ( 1 - shrink_rate[4]) * UNIT_HEIGHT + line_width);
+  glEnd();
+  glPopMatrix();
+}
+
 void draw_thing(Thing* thing){
   //cout << "IN DRAW_THING"<< endl;
   glPushMatrix();
@@ -179,32 +241,48 @@ void draw_thing(Thing* thing){
                     thing_color[thing->get_level()].color[2]
                   };
   //cout << color[0] << ',' << color[1] << ',' << color[2] << endl;
-  glColor3fv(color);
-  double w_size = 0.05 * UNIT_WIDTH;
-  double h_size = 0.05 * UNIT_HEIGHT;
+  if(thing->get_state() == ALIVE)
+    glColor3fv(color);
+  else
+    glColor3f(0.0,0.0,0.0);
+  
+  int level = thing->get_level();
+
+  double w_size = 0.05 * shrink_rate[level];
+  double h_size = 0.05 * shrink_rate[level];
+
+  double x_shift = thing->get_x() * shrink_rate[level] + 0.5 * ( 1 - shrink_rate[level]);
+  double y_shift = thing->get_y() * shrink_rate[level] + 0.5 * ( 1 - shrink_rate[level]);
+
 
   glBegin(GL_POLYGON);
-    glVertex2f(thing->get_x() - w_size, thing->get_y() + h_size);
-    glVertex2f(thing->get_x() + w_size, thing->get_y() + h_size);
-    glVertex2f(thing->get_x() + w_size, thing->get_y() - h_size);
-    glVertex2f(thing->get_x() - w_size, thing->get_y() - h_size);
+    glVertex2f((x_shift - w_size) * UNIT_WIDTH, (y_shift + h_size) * UNIT_HEIGHT);
+    glVertex2f((x_shift + w_size) * UNIT_WIDTH, (y_shift + h_size) * UNIT_HEIGHT);
+    glVertex2f((x_shift + w_size) * UNIT_WIDTH, (y_shift - h_size) * UNIT_HEIGHT);
+    glVertex2f((x_shift - w_size) * UNIT_WIDTH, (y_shift - h_size) * UNIT_HEIGHT);
   glEnd();
 
   glPopMatrix();
 }
 
 void draw_bomb(Bomb* bomb){
-  glPopMatrix();
-  glColor4f(0.0,0.0,0.0,1-bomb->get_level()*0.2);
+  glPushMatrix();
+  glColor4f(0.0,0.0,1.0,1-bomb->get_level()*0.2);
 
-  double w_size = 0.02 * UNIT_WIDTH;
-  double h_size = 0.02 * UNIT_HEIGHT;
+  int level = bomb->get_level();
+
+  double w_size = 0.02 * shrink_rate[level];
+  double h_size = 0.02 * shrink_rate[level];
+
+  double x_shift = bomb->get_x() * shrink_rate[level] + 0.5 * ( 1 - shrink_rate[level]);
+  double y_shift = bomb->get_y() * shrink_rate[level] + 0.5 * ( 1 - shrink_rate[level]);
+
 
   glBegin(GL_POLYGON);
-    glVertex2f(bomb->get_x() - w_size, bomb->get_y() + h_size);
-    glVertex2f(bomb->get_x() + w_size, bomb->get_y() + h_size);
-    glVertex2f(bomb->get_x() + w_size, bomb->get_y() - h_size);
-    glVertex2f(bomb->get_x() - w_size, bomb->get_y() - h_size);
+    glVertex2f((x_shift - w_size) * UNIT_WIDTH, (y_shift + h_size) * UNIT_HEIGHT);
+    glVertex2f((x_shift + w_size) * UNIT_WIDTH, (y_shift + h_size) * UNIT_HEIGHT);
+    glVertex2f((x_shift + w_size) * UNIT_WIDTH, (y_shift - h_size) * UNIT_HEIGHT);
+    glVertex2f((x_shift - w_size) * UNIT_WIDTH, (y_shift - h_size) * UNIT_HEIGHT);
   glEnd();
 
   glPopMatrix();
@@ -235,7 +313,7 @@ void reshape(int w,int h){
 
 
 void keyboard(unsigned char key, int x, int y ){
-  if( key == 'q')
+  if( key == 'q' || key == 'Q')
     exit(-1);
   return;
 }
@@ -243,7 +321,9 @@ void keyboard(unsigned char key, int x, int y ){
 void mouse(int button, int state, int x, int y){
   if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
     score += score_table[5];// minus 100 for each bomb dropped
-    bombs.push_back(new Bomb(x,UNIT_HEIGHT-y));
+    double x_pos = (double)x/UNIT_WIDTH;
+    double y_pos = 1.0 - (double)y/UNIT_HEIGHT;
+    bombs.push_back(new Bomb(x_pos,y_pos));
   }
 }
 
@@ -260,30 +340,46 @@ void move(){
   vector<Thing*>::iterator j;
   for(ri = things.rbegin(); ri != things.rend(); ++ri){
     for( j = (*ri).begin(); j != (*ri).end(); ++j){
-      border_check(*j);
+      if((*j)->get_state() == DYING){
+        (*j)->set_state(DEAD);
+        continue;
+      }
       (*j)->move();
-      }   
     }   
+  }
+  
+  vector<Bomb*>::iterator b;
+  for( b = bombs.begin(); b != bombs.end(); ++b){
+    (*b)->move();
+    if((*b)->get_level() == 5){
+      (*b)->set_state(DEAD);
+      continue;
+    }
+    else if((*b)->get_state() == ALIVE){
+      vector<Thing*> current_level = things.at((*b)->get_level());
+      vector<Thing*>::iterator i;
+      for( i = current_level.begin(); i != current_level.end(); i++){
+        if((*b)->get_state() == ALIVE && 
+           (*i)->get_state() == ALIVE &&
+           hit_check(*b, *i)){
+          //set thing's state
+          (*i)->set_state(DYING);
+          // update score
+          score += score_table[(*b)->get_level()];
+        }
+      }
+    }
+  }   
 }
 
-void border_check(Thing* thing){
-  if( thing->get_x() + thing->get_vx() > 0.95 * UNIT_WIDTH){
-    thing->set_x( 1.9 * UNIT_WIDTH - thing->get_x() );
-    thing->set_vx( - thing->get_vx());
-  }
-  if( thing->get_x() + thing->get_vx() < 0.05 * UNIT_WIDTH){
-    thing->set_x( 0.1 * UNIT_WIDTH - thing->get_x() );
-    thing->set_vx( - thing->get_vx());
-  }
-  if( thing->get_y() + thing->get_vy() > 0.95 * UNIT_HEIGHT){
-    thing->set_y( 1.9 * UNIT_HEIGHT - thing->get_y() );
-    thing->set_vy( - thing->get_vy());
-  }
-  if( thing->get_y() + thing->get_vy() < 0.05 * UNIT_HEIGHT){
-    thing->set_y( 0.1 * UNIT_HEIGHT - thing->get_y() );
-    thing->set_vy( - thing->get_vy());
-  }
+bool hit_check(Bomb* b, Thing* t){
+  if( fabs( b->get_x() - t->get_x() ) <= 0.05 && 
+      fabs( b->get_y() - t->get_y() ) <= 0.05 )
+      return true;
+  return false;
 }
+
+
 
 
 

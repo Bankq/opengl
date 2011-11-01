@@ -23,3 +23,9 @@ And, although there's no bombs number limit, every bomb you drop will cause a 10
 Use 'q' on keyboard to exit
 Click middle button will pause the game and fortunately we can resume it by click it again.
 Click right button will execute step by step ,and every thing's status will output to standard output.
+
+
+* make 3d view
+* make thing move smoothly
+* add end view
+* indicate the hit thing

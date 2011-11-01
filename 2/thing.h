@@ -25,7 +25,7 @@ class Thing{
   double my_rand(double,double);
 
  public:
-  Thing(int,int,int);
+  Thing(int);
   ~Thing(){};
   void display();
   void move();

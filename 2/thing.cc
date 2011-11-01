@@ -1,11 +1,11 @@
 #include "thing.h"
 
 
-Thing::Thing(int level,int w_unit, int h_unit){
-  this->px = my_rand(0.05 * w_unit, 0.95 * w_unit);
-  this->py = my_rand(0.05 * h_unit, 0.95 * h_unit);
-  this->vx = my_rand(-0.025 * w_unit, 0.025 * w_unit);
-  this->vy = my_rand(-0.025 * h_unit, 0.025 * h_unit);
+Thing::Thing(int level){
+  this->px = my_rand(0.05, 0.95);
+  this->py = my_rand(0.05, 0.95);
+  this->vx = my_rand(-0.025, 0.025);
+  this->vy = my_rand(-0.025, 0.025);
   this->level = level;
   this->state = ALIVE;
 }
@@ -70,6 +70,26 @@ int Thing::get_level(){
 }
 
 void Thing::move(){
+  
+  if( this->px + this->vx > 0.95 ){
+    this->px = 1.9 - this->px;
+    this->vx = -this->vx;
+  }
+  if( this->px + this->vx < 0.05 ){
+    this->px = 0.1 - this->px;
+    this->vx = -this->vx;
+  }
+  if( this->py + this->vy > 0.95 ){
+    this->py = 1.9 - this->py;
+    this->vy = -this->vy;
+  }
+  if( this->py + this->vy < 0.05 ){
+    this->py = 0.1 - this->py;
+    this->vy = -this->vy;
+  }
+
+
+
   this->px += this->vx;
   this->py += this->vy;
 }

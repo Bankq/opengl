@@ -30,8 +30,6 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 
-
-
 def main():
     print "---------Bank------------"
     glutInit(sys.argv)
@@ -48,7 +46,7 @@ def init():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluOrtho2D(0.0,800.0,0.0,800.0)
-   
+
     
 def display():
   glClear(GL_COLOR_BUFFER_BIT)
@@ -64,11 +62,15 @@ def display():
   glVertex2f(c[0],c[1])
 
   glEnd()
-  draw(a,b,c,0)
+  if len(sys.argv) >= 2:
+    depth = sys.argv[1]
+  else:
+    depth = 4
+  draw(a,b,c,0,depth)
 
-def draw(a,b,c,level):
+def draw(a,b,c,level,depth):
 
-  if level <= 6:
+  if level <= 7:
     print a,b,c
     glColor3f(1,1,1)
     
@@ -81,9 +83,9 @@ def draw(a,b,c,level):
     glEnd()
     glFlush()
     level = level + 1
-    draw([(a[0]+b[0])/2,(a[1]+b[1])/2],b,[(b[0]+c[0])/2,(b[1]+c[1])/2],level)
-    draw(a,[(a[0]+b[0])/2,(a[1]+b[1])/2],[(c[0]+a[0])/2,(c[1]+a[1])/2],level)
-    draw([(c[0]+a[0])/2,(c[1]+a[1])/2],[(b[0]+c[0])/2,(b[1]+c[1])/2],c,level)
+    draw([(a[0]+b[0])/2,(a[1]+b[1])/2],b,[(b[0]+c[0])/2,(b[1]+c[1])/2],level,depth)
+    draw(a,[(a[0]+b[0])/2,(a[1]+b[1])/2],[(c[0]+a[0])/2,(c[1]+a[1])/2],level,depth)
+    draw([(c[0]+a[0])/2,(c[1]+a[1])/2],[(b[0]+c[0])/2,(b[1]+c[1])/2],c,level,depth)
   else :
     print 'return'
     return

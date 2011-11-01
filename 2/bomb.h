@@ -3,6 +3,7 @@
 
 #define ALIVE 0
 #define DEAD 1
+#define DYING 2
 #endif
 
 
@@ -10,18 +11,18 @@
 
 class Bomb{
  private:
-  int px;
-  int py;
+  double px;
+  double py;
   int level;
   int state;
   
  public:
-  Bomb(int,int);
+  Bomb(double,double);
   ~Bomb(){};
   void display();
   void move();
-  int get_x();
-  int get_y();
+  double get_x();
+  double get_y();
   int get_level();
   void add_level();
   void set_state(int);

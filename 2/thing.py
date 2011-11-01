@@ -1,12 +1,11 @@
 import random
-
 class Thing:
     def __init__ (self,level,wunit,hunit):
         #default construction
-        self.px = random.randint(0.05 * wunit, 0.95 * hunit)
-        self.py = random.randint(0.05 * wunit,0.95 * hunit)
-        self.vx = random.randint(-0.025 * wunit, 0.025 * hunit)
-        self.vy = random.randint(-0.025 * wunit, 0.025 * hunit)
+        self.px = random.randint(0.05 * wunit, 0.95 * wunit)
+        self.py = random.randint(0.05 * hunit,0.95 * hunit)
+        self.vx = random.randint(-0.025 * wunit, 0.025 * wunit)
+        self.vy = random.randint(-0.025 * hunit, 0.025 * hunit)
         self.level = level
     
     def display(self):

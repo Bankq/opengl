@@ -1,8 +1,8 @@
 #include "bomb.h"
-Bomb::Bomb(int x,int y){
+Bomb::Bomb(double x,double y){
   this->px = x;
   this->py = y;
-  this->level = 0;
+  this->level = -1;
   this->state = ALIVE;
 }
 
@@ -28,11 +28,11 @@ int Bomb::get_state(){
   return this->state;
 }
 
-int Bomb::get_x(){
+double Bomb::get_x(){
   return this->px;
 }
 
-int Bomb::get_y(){
+double Bomb::get_y(){
   return this->py;
 }
 
