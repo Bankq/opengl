@@ -2,6 +2,9 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <string>
+#include <sstream>
 
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
@@ -22,6 +25,7 @@
 #define RUNNING 0
 #define PAUSE 1
 #define END 2
+#define STEP 3
 
 #define INTERVAL 100
 
@@ -46,7 +50,11 @@ struct ColorVec{
 };
 
 struct ColorVec thing_color[5];
-
+char time_str[] = "TIME: ";
+char score_str[] = "SCORE: ";
+char pause_str[] = "PAUSE";
+char timeup_str[] = "TIME UP!";
+char win_str[] = "YOU WIN!";
 
 const int score_table[6] = { -4000, -2000, -1000, 1000, 2000, -100};
 const float shrink_rate[5] = { 1, 0.9, 0.8, 0.7, 0.6};
@@ -57,20 +65,28 @@ vector<Bomb*> bombs;
 
 
 
-void init();
-void display();
-void reshape(int,int);
-void keyboard(unsigned char,int,int);
+void init(); // initialize the settings
+void display(); // display routine
+void reshape(int,int); // reshape routine
+void keyboard(unsigned char,int,int); 
 void mouse(int,int,int,int);
 void timer(int);
-void init_things();
-void debug();
-void init_color_table();
-void draw_border();
-void draw_thing(Thing*);
-void draw_bomb(Bomb*);
-void move();
-bool hit_check(Bomb*, Thing*);
+void init_things(); // intialize the thing list
+void debug();// console output
+void init_color_table(); // intialize the color table
+void draw_border(); // draw the wall
+void draw_thing(Thing*); // draw a single thing
+void draw_bomb(Bomb*); // draw a single bomb
+void move(); // move everything one step
+bool hit_check(Bomb*, Thing*); // check if a bomb hit something
+void display_info(); // display time and score
+void display_timeup();// display time up info
+void display_win(); // display winning info
+void pause_game(); // pause the game
+bool clear(); // check if destroy all bad things
+void one_step_move(); // execute a one step move
+bool foo(Bomb*);
+
 
 
 int main( int argc, char** argv) {
@@ -137,6 +153,11 @@ void init_color_table(){
   thing_color[4].color[2] = 0.0;
 }
 
+/* 
+ * Loop the thing list and call each one's
+ * constuctor function
+*/
+
 void init_things(){
   for( int i = 0 ; i < NUM_LEVEL ; i++){
     vector<Thing*> level_things;
@@ -152,32 +173,114 @@ void init_things(){
 
 void display(){
   glClear(GL_COLOR_BUFFER_BIT);
-  //cout << "IN DISPLAY" << endl;
-
-  // draw border
+  // always draw border
   draw_border();
 
-  // draw things
-  vector< vector<Thing*> >::reverse_iterator ri;
-  vector<Thing*>::iterator j;
-  vector<Bomb*>::iterator b;
-  for(ri = things.rbegin(); ri != things.rend(); ++ri){
-    for( j = (*ri).begin(); j != (*ri).end(); ++j){
-      if((*j)->get_state() != DEAD)
-        draw_thing(*j);
-      for( b = bombs.begin(); b != bombs.end(); ++b){
-        if( (*b)->get_level() == (*j)->get_level() ){
-          //if there are bombs on the same level
-          if((*b)->get_state() != DEAD && (*b)->get_level() != -1 )
-            draw_bomb(*b);
-        }
-      }   
-    } 
-
-   
+  // if game ends;
+  if(game_state == END){
+    if ( total_time <= 0){
+      display_timeup();
+    }
+    else{
+      display_win();
+    }
   }
-  
+
+  // draw things
+  if( game_state == RUNNING || 
+      game_state == PAUSE || 
+      game_state == STEP){
+    vector< vector<Thing*> >::reverse_iterator ri;
+    vector<Thing*>::iterator j;
+    vector<Bomb*>::iterator b;
+    for(ri = things.rbegin(); ri != things.rend(); ++ri){
+      for( j = (*ri).begin(); j != (*ri).end(); ++j){
+        if((*j)->get_state() != DEAD)
+          draw_thing(*j);
+        for( b = bombs.begin(); b != bombs.end(); ++b){
+          if( (*b)->get_level() == (*j)->get_level() ){
+            //if there are bombs on the same level
+            if((*b)->get_state() != DEAD && (*b)->get_level() != -1 )
+              draw_bomb(*b);
+          }
+        }   
+      } 
+    }
+  }
+
+  display_info();
   glutSwapBuffers();
+  
+}
+void display_win(){
+    char* p = win_str;
+    glColor3f(1,0,0);
+    glRasterPos2f(5,UNIT_HEIGHT-23);
+    while( *p != '\0'){
+      glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*p);
+      p += 1; 
+    } 
+}
+void display_timeup(){
+    char* p = timeup_str;
+    glColor3f(1,0,0);
+    glRasterPos2f(5,UNIT_HEIGHT-23);
+    while( *p != '\0'){
+      glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*p);
+      p += 1; 
+    }
+}
+
+void display_info(){
+  glPushMatrix();
+
+  // write time and score
+  glColor3f(1,1,0);
+  glRasterPos2f(5,5);
+  char* c = time_str;
+  while( *c != '\0'){
+    glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*c);
+    c += 1; 
+  }
+  glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,' ');
+  
+  char tt[10];
+  sprintf( tt,"%d", total_time);
+  c = tt;
+  while( *c != '\0'){
+    glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*c);
+    c += 1; 
+  }
+  glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,' ');
+  
+
+  char* s = score_str;
+  while( *s != '\0'){
+    glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*s);
+    s += 1; 
+  }
+  glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,' ');
+  
+  char sc[10];
+  sprintf( sc,"%d", score);
+  c = sc;
+  while( *c != '\0'){
+    glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*c);
+    c += 1; 
+  }
+
+
+  //display pause if needed
+  if( game_state == PAUSE ){
+    char* p = pause_str;
+    glColor3f(1,0,0);
+    glRasterPos2f(5,UNIT_HEIGHT-23);
+    while( *p != '\0'){
+      glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,*p);
+      p += 1; 
+    }
+  }
+  glPopMatrix();
   
 }
 
@@ -233,6 +336,13 @@ void draw_border(){
   glPopMatrix();
 }
 
+
+/*
+  This is the most tricky part of the program
+  Different level has different view_size
+  We need to shrink the view_size of each level
+  the shrink ratio is pre defined as shrink_rate[]
+*/
 void draw_thing(Thing* thing){
   //cout << "IN DRAW_THING"<< endl;
   glPushMatrix();
@@ -240,7 +350,6 @@ void draw_thing(Thing* thing){
                     thing_color[thing->get_level()].color[1],
                     thing_color[thing->get_level()].color[2]
                   };
-  //cout << color[0] << ',' << color[1] << ',' << color[2] << endl;
   if(thing->get_state() == ALIVE)
     glColor3fv(color);
   else
@@ -289,13 +398,25 @@ void draw_bomb(Bomb* bomb){
 }
 
 void debug(){
+  cout << "---------------------" << endl;
+  cout << "Current Window Size:";
+  cout << "Width: "<<UNIT_WIDTH << " | Height: "<< UNIT_HEIGHT << endl;
+  cout << "-------- THINGS ----------" << endl;
+
   vector< vector<Thing*> >::iterator i;
   vector<Thing*>::iterator j;
   for(i = things.begin(); i != things.end(); ++i){
+    cout << "- - - - - - - - - - - " << endl;
     for( j = (*i).begin(); j != (*i).end(); ++j){
       (*j)->display();
     }    
   }
+  cout << "-------- BOMBS ----------" << endl;
+  vector<Bomb*>::iterator k;
+  for(k = bombs.begin(); k != bombs.end(); ++k){
+    (*k)->display();
+  }
+
 }
 
 
@@ -315,43 +436,106 @@ void reshape(int w,int h){
 void keyboard(unsigned char key, int x, int y ){
   if( key == 'q' || key == 'Q')
     exit(-1);
+  if( key == 'p' || key == 'P')
+    pause_game();
   return;
 }
 
 void mouse(int button, int state, int x, int y){
-  if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
+  if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && 
+      (game_state == RUNNING || game_state == STEP) ){
     score += score_table[5];// minus 100 for each bomb dropped
     double x_pos = (double)x/UNIT_WIDTH;
     double y_pos = 1.0 - (double)y/UNIT_HEIGHT;
     bombs.push_back(new Bomb(x_pos,y_pos));
   }
+  if ( button == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN){
+    pause_game();
+  }
+  if ( button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN){
+    one_step_move();
+  }
+}
+
+void one_step_move(){
+  if(game_state == RUNNING){
+    game_state = STEP;
+  }
+  else if( game_state == STEP ){
+    move();
+    debug();
+    glutPostRedisplay();
+  }
+}
+void pause_game(){
+  if (game_state == RUNNING){
+    game_state = PAUSE;
+  }
+  else if(game_state == PAUSE || game_state == STEP){
+    game_state = RUNNING;
+  }
 }
 
 void timer(int id){
-  move();
+  if(game_state == RUNNING)
+    move();
+  if(total_time <= 0 ){
+    game_state = END;
+  }
+  if ( clear()){
+    game_state = END;
+  }
   glutPostRedisplay();
   glutTimerFunc(100,timer,0);
 }
 
+bool clear(){
+//-------------------------------------------------
+// erase the dead bombs.
+  vector<Bomb*>::iterator b = bombs.begin();
+  while( b != bombs.end()){
+    if( (*b)->get_state() == DEAD){
+      b = bombs.erase(b);
+    }
+    else{
+      ++b;
+    }
+  }
+
+//-------------------------------------------------
+  vector< vector<Thing*> >::reverse_iterator ri;
+  vector<Thing*>::iterator j;
+  for(ri = things.rbegin(); ri != things.rend(); ++ri){
+    for( j = (*ri).begin(); j != (*ri).end(); ++j){
+      if((*j)->get_state() != DEAD && (*j)->get_level() > 2){
+        return false;
+      }
+    }   
+  }
+  return true;
+}
+
 void move(){
   total_time --;
-
+  // loop over the thing list and move each one
   vector< vector<Thing*> >::reverse_iterator ri;
   vector<Thing*>::iterator j;
   for(ri = things.rbegin(); ri != things.rend(); ++ri){
     for( j = (*ri).begin(); j != (*ri).end(); ++j){
       if((*j)->get_state() == DYING){
+        // if one got hit, don't move it
         (*j)->set_state(DEAD);
         continue;
       }
       (*j)->move();
     }   
   }
-  
+  // loop bomb list and move every one
   vector<Bomb*>::iterator b;
   for( b = bombs.begin(); b != bombs.end(); ++b){
     (*b)->move();
     if((*b)->get_level() == 5){
+      // 5 means hits the ground
       (*b)->set_state(DEAD);
       continue;
     }
@@ -362,7 +546,7 @@ void move(){
         if((*b)->get_state() == ALIVE && 
            (*i)->get_state() == ALIVE &&
            hit_check(*b, *i)){
-          //set thing's state
+          //if a bomb hits a thing ,set the thing's state
           (*i)->set_state(DYING);
           // update score
           score += score_table[(*b)->get_level()];
@@ -379,8 +563,10 @@ bool hit_check(Bomb* b, Thing* t){
   return false;
 }
 
-
-
+bool foo(Bomb* b){
+  if( b->get_state() == DEAD ) return true;
+  return false;
+}
 
 
 
