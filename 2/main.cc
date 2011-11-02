@@ -1,3 +1,30 @@
+/*************************************************
+* Author: Hang Qian
+* Email: hq577780@sju.edu
+* 
+* This is the homework 2 of CSC630-Interactive 
+* Comupter Graphic of 2011 fall.
+*
+*    
+*    This file is part of the program.
+*
+*    The program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with the program.  If not, see <http://www.gnu.org/licenses/>.
+
+**************************************************/
+
+
+
 #include "stdlib.h"
 
 #include <iostream>
@@ -27,7 +54,8 @@
 #define END 2
 #define STEP 3
 
-#define INTERVAL 80
+#define INTERVAL 10
+#define TIMER_TOGGLE 100
 
 #define NUM_LEVEL 5
 #define NUM_LEVEL_THING 4
@@ -38,12 +66,13 @@ using namespace std;
 
 
 
-int UNIT_WIDTH = 400;
-int UNIT_HEIGHT = 400;
+int UNIT_WIDTH = 800;
+int UNIT_HEIGHT = 800;
 
 int score = 100;
 int game_state = 0;
 int total_time = 1000;
+int counter = 0;
 
 float current_mouse_x = 0.0;
 float current_mouse_y = 0.0;
@@ -82,6 +111,8 @@ void draw_border(); // draw the wall
 void draw_thing(Thing*); // draw a single thing
 void draw_bomb(Bomb*); // draw a single bomb
 void move(); // move everything one step
+void move_things();// move all the things
+void move_bombs(); // move all the bombs
 bool hit_check(Bomb*, Thing*); // check if a bomb hit something
 void display_info(); // display time and score
 void display_timeup();// display time up info
@@ -105,7 +136,7 @@ int main( int argc, char** argv) {
   glutKeyboardFunc(keyboard);
   glutMouseFunc(mouse);
   glutPassiveMotionFunc(aim);
-  glutTimerFunc(INTERVAL, timer, PAUSE);
+  glutTimerFunc(TIMER_TOGGLE, timer, 0);
   init();
   glutMainLoop();
   return 0;
@@ -464,7 +495,22 @@ void mouse(int button, int state, int x, int y){
 }
 
 void aim(int x, int y){
-    y = UNIT_HEIGHT - y; 
+    y = UNIT_HEIGHT - y;
+    
+    if( x > UNIT_WIDTH){
+      x = UNIT_WIDTH;
+    } 
+    else if( x < 0 ){
+      x = 0;
+    }
+
+    if( y > UNIT_HEIGHT ){
+      y = UNIT_HEIGHT;
+    }
+    else if( y < 0 ){
+      y = 0;
+    }
+
     current_mouse_x = x;
     current_mouse_y = y;
  
@@ -556,20 +602,17 @@ bool clear(){
 }
 
 void move(){
-  total_time --;
-  // loop over the thing list and move each one
-  vector< vector<Thing*> >::reverse_iterator ri;
-  vector<Thing*>::iterator j;
-  for(ri = things.rbegin(); ri != things.rend(); ++ri){
-    for( j = (*ri).begin(); j != (*ri).end(); ++j){
-      if((*j)->get_state() == DYING){
-        // if one got hit, don't move it
-        (*j)->set_state(DEAD);
-        continue;
-      }
-      (*j)->move();
-    }   
+  
+  move_things();
+  if( ++counter == INTERVAL){
+    counter = 0;
+    move_bombs();
   }
+  
+  
+}
+void move_bombs(){
+  total_time --;
   // loop bomb list and move every one
   vector<Bomb*>::iterator b;
   for( b = bombs.begin(); b != bombs.end(); ++b){
@@ -593,8 +636,24 @@ void move(){
         }
       }
     }
-  }   
+  } 
 }
+void move_things(){
+// loop over the thing list and move each one
+  vector< vector<Thing*> >::reverse_iterator ri;
+  vector<Thing*>::iterator j;
+  for(ri = things.rbegin(); ri != things.rend(); ++ri){
+    for( j = (*ri).begin(); j != (*ri).end(); ++j){
+      if((*j)->get_state() == DYING){
+        // if one got hit, don't move it
+        (*j)->set_state(DEAD);
+        continue;
+      }
+      (*j)->move();
+    }   
+  }  
+}
+
 
 bool hit_check(Bomb* b, Thing* t){
   if( fabs( b->get_x() - t->get_x() ) <= 0.05 && 

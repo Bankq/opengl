@@ -1,11 +1,37 @@
+/*************************************************
+* Author: Hang Qian
+* Email: hq577780@sju.edu
+* 
+* This is the homework 2 of CSC630-Interactive 
+* Comupter Graphic of 2011 fall.
+*
+*    
+*    This file is part of the program.
+*
+*    The program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with the program.  If not, see <http://www.gnu.org/licenses/>.
+
+**************************************************/
+
+
 #include "thing.h"
 
 
 Thing::Thing(int level){
   this->px = my_rand(0.05, 0.95);
   this->py = my_rand(0.05, 0.95);
-  this->vx = my_rand(-0.025, 0.025);
-  this->vy = my_rand(-0.025, 0.025);
+  this->vx = my_rand(-0.0025, 0.0025);
+  this->vy = my_rand(-0.0025, 0.0025);
   this->level = level;
   this->state = ALIVE;
 }
