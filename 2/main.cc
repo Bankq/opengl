@@ -27,7 +27,7 @@
 #define END 2
 #define STEP 3
 
-#define INTERVAL 100
+#define INTERVAL 80
 
 #define NUM_LEVEL 5
 #define NUM_LEVEL_THING 4
@@ -45,6 +45,8 @@ int score = 100;
 int game_state = 0;
 int total_time = 1000;
 
+float current_mouse_x = 0.0;
+float current_mouse_y = 0.0;
 struct ColorVec{
   float color[3];
 };
@@ -68,9 +70,11 @@ vector<Bomb*> bombs;
 void init(); // initialize the settings
 void display(); // display routine
 void reshape(int,int); // reshape routine
-void keyboard(unsigned char,int,int); 
-void mouse(int,int,int,int);
-void timer(int);
+void keyboard(unsigned char,int,int); // keyboard routine
+void mouse(int,int,int,int); //mouse routine
+void aim(int,int);// passive mouse callback
+void draw_aim(int,int,int);// draw a helping aim
+void timer(int); // timer routine
 void init_things(); // intialize the thing list
 void debug();// console output
 void init_color_table(); // intialize the color table
@@ -100,6 +104,7 @@ int main( int argc, char** argv) {
   glutReshapeFunc(reshape);
   glutKeyboardFunc(keyboard);
   glutMouseFunc(mouse);
+  glutPassiveMotionFunc(aim);
   glutTimerFunc(INTERVAL, timer, PAUSE);
   init();
   glutMainLoop();
@@ -175,7 +180,7 @@ void display(){
   glClear(GL_COLOR_BUFFER_BIT);
   // always draw border
   draw_border();
-
+ 
   // if game ends;
   if(game_state == END){
     if ( total_time <= 0){
@@ -197,6 +202,7 @@ void display(){
       for( j = (*ri).begin(); j != (*ri).end(); ++j){
         if((*j)->get_state() != DEAD)
           draw_thing(*j);
+          draw_aim((*j)->get_level(),current_mouse_x,current_mouse_y);
         for( b = bombs.begin(); b != bombs.end(); ++b){
           if( (*b)->get_level() == (*j)->get_level() ){
             //if there are bombs on the same level
@@ -207,7 +213,7 @@ void display(){
       } 
     }
   }
-
+ 
   display_info();
   glutSwapBuffers();
   
@@ -457,6 +463,40 @@ void mouse(int button, int state, int x, int y){
   }
 }
 
+void aim(int x, int y){
+    y = UNIT_HEIGHT - y; 
+    current_mouse_x = x;
+    current_mouse_y = y;
+ 
+}
+
+void draw_aim(int level,int x, int y){
+  //cout << "IN DRAW AIM, X: "<< x << " Y: " << y << endl;
+  int line_width = 3;
+  
+    glPushMatrix();
+    float x_shift = UNIT_WIDTH * (1 - shrink_rate[level]) * 0.5 + x * shrink_rate[level];
+    float y_shift = UNIT_HEIGHT * (1 - shrink_rate[level]) * 0.5 + y * shrink_rate[level];
+    float w_size = 0.02 * shrink_rate[level] * UNIT_WIDTH;
+    float h_size = 0.02 * shrink_rate[level] * UNIT_HEIGHT;
+    glColor3f(1,0,0);
+    glBegin(GL_POLYGON);
+     glVertex2f(x_shift - w_size, y_shift + h_size);
+     glVertex2f(x_shift + w_size, y_shift + h_size);
+     glVertex2f(x_shift + w_size, y_shift - h_size);
+     glVertex2f(x_shift - w_size, y_shift - h_size);
+    glEnd();
+
+    glColor3f(1,1,1);
+    glBegin(GL_POLYGON);
+     glVertex2f(x_shift - w_size + line_width, y_shift + h_size - line_width);
+     glVertex2f(x_shift + w_size - line_width, y_shift + h_size - line_width);
+     glVertex2f(x_shift + w_size - line_width, y_shift - h_size + line_width);
+     glVertex2f(x_shift - w_size + line_width, y_shift - h_size + line_width);
+    glEnd();
+    glPopMatrix();
+ 
+}
 void one_step_move(){
   if(game_state == RUNNING){
     game_state = STEP;
@@ -486,7 +526,7 @@ void timer(int id){
     game_state = END;
   }
   glutPostRedisplay();
-  glutTimerFunc(100,timer,0);
+  glutTimerFunc(INTERVAL,timer,0);
 }
 
 bool clear(){
