@@ -61,12 +61,17 @@ using namespace std;
 #define SPHERERADIUS 10            /*radius of sphere */
 #define NEAR 1               /*clipping plane near and far */
 #define FAR 10000
-#define TIMER_TOGGLE 100
 
+#define TIMER_TOGGLE 100
+#define RUNNING 0
+#define PAUSE 1
+#define STEP 2
+#define TRANSLATE 0
+#define ROTATE 1
 
 /* window dimensi0ns */
-int wh=300;
-int ww=400;
+int wh=800;
+int ww=600;
 
 float x_view;
 float y_view;
@@ -78,6 +83,7 @@ float y_eye;
 float z_eye;
 
 int current_postion;
+int game_state;
 
 /* parameters for drawing sphere and torus */
 GLint NO_STACKS=20;
@@ -118,8 +124,8 @@ GLfloat ship_coords[NO_SHIPS][3]={{100.0,10.0,10.0},
 
 
 /*velocites (translational and rotational) for each ship */
-GLfloat ship_velocities[NO_SHIPS][2]={{0.0,0.0},
-             {-2.0,0.0}};
+GLfloat ship_velocities[NO_SHIPS][2]={{0.0,2.0},
+             {-2.0,1.0}};
 
 
 /*heading initializations for each ship */
@@ -130,6 +136,36 @@ GLfloat ship_headings[NO_SHIPS]={0.0, 180.0};
 Ship* ship1;
 Ship* ship2;
 
+
+/****************************/
+void init(void);
+void draw_clouds(void);
+void draw_ship(Ship* ship);
+void draw_ships(void);
+void draw_ground(void);
+void display(void);
+void reshape(int w, int h);
+void keyboard(unsigned char key, int x, int y);
+void move(void);
+void change_view_position(void);
+void change_eye_position(void);
+void timer(int id);
+void mouse(int button, int state, int x, int y);
+void switch_ship(void);
+void pause_game(void);
+void debug(void);
+void step_game(void);
+void speed_up(int mode);
+void slow_down(int mode);
+/****************************/
+
+
+
+
+
+
+
+
 void init(void){
   glEnable(GL_LINE_SMOOTH);
 
@@ -139,28 +175,40 @@ void init(void){
   //Initialize the two ships
   ship1 = new Ship(ship_coords[0][0],
                    ship_coords[0][1],
-                   ship_coords[0][2],
+                   ship_coords[0][2],// coordinate
+                   0.0,
+                   1.0,
+                   0.0,//direction
                    ship_velocities[0][0],
-                   ship_velocities[0][1],
-                   0.0); // no pre-requirement for vz
+                   ship_velocities[0][1]); // velocity
   ship2 = new Ship(ship_coords[1][0],
                    ship_coords[1][1],
                    ship_coords[1][2],
+                   0.0,
+                   -1.0,
+                   0.0,
                    ship_velocities[1][0],
-                   ship_velocities[1][1],
-                   0.0);
+                   ship_velocities[1][1]);
 
   x_eye = ship1->px;
   y_eye = ship1->py;
   z_eye = ship1->pz;
 
-  x_view = ship2->px;
-  y_view = ship2->py;
-  z_view = ship2->pz;
+  x_view = ship1->dx + ship1->px;
+  y_view = ship1->dy + ship1->py;
+  z_view = ship1->dz + ship1->pz;
 
   current_postion = 0;
 
 }
+
+void draw_ground(){
+  glPushMatrix();
+  glColor3f(0.0,0.0,0.0);
+  glRectf(-500.0,-500.0,500.0,500.0);
+  glPopMatrix();
+}
+
 
 void draw_clouds(){
   for(int i=0; i<NO_CLOUDS; i++){
@@ -177,8 +225,13 @@ void draw_clouds(){
 void draw_ship(Ship* ship){
   glPushMatrix();
   glColor4fv(ship_color);
+  // move to position
   glTranslatef(ship->px,ship->py,ship->pz);
+  // do self rotation
+  glRotatef(ship->angel,1.0,0.0,0.0);
+  // draw horizontal torus
   glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
+  // draw vertical torus
   glRotatef(90,1.0,0.0,0.0);
   glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
   glPopMatrix();
@@ -195,9 +248,13 @@ void draw_ships(){
 void display(){
   glClear(GL_COLOR_BUFFER_BIT);
   glLoadIdentity(); 
-  gluLookAt (x_eye, y_eye, z_eye, 
+  /*gluLookAt (x_eye, y_eye, z_eye, 
             x_view,y_view,z_view,
-            0.0, 0.0, 1.0);
+            0.0, 0.0, 1.0);*/
+  gluLookAt(x_eye,y_eye,z_eye,
+            x_view,y_view,z_view,
+            0.0,0.0,1.0);
+  draw_ground();
   draw_clouds();
   draw_ships();
 
@@ -211,7 +268,6 @@ void reshape(int w, int h){
    glLoadIdentity ();
 
    gluPerspective(FOVY,(GLfloat)w/h,NEAR,FAR);
-   //glOrtho(-10.0,10.0,-10.0,10.0,1.0,20.0);
    glMatrixMode (GL_MODELVIEW);
 }
 
@@ -219,33 +275,20 @@ void keyboard(unsigned char key, int x, int y){
   switch(key){
     case 'q':
       exit(0);
+    case 'p':
+      pause_game();
+      break;
     case 'a':
-      x_view -= 5;
-      glutPostRedisplay();
-      break;
-    case 'd':
-      x_view += 5;
-      glutPostRedisplay();
-      break;
-    case 'w':
-      z_view += 5;
-      glutPostRedisplay();
+      speed_up(TRANSLATE);
       break;
     case 's':
-      z_view -= 5;
-      glutPostRedisplay();
+      slow_down(TRANSLATE);
       break;
-    case 'u':
-      x_view = ship1->px;
-      y_view = ship1->py;
-      z_view = ship2->pz;
-      glutPostRedisplay();
+    case 'l':
+      speed_up(ROTATE);
       break;
-    case 'i':
-      x_view = ship2->px;
-      y_view = ship2->py;
-      z_view = ship2->pz;
-      glutPostRedisplay();
+    case 'k':
+      slow_down(ROTATE);
       break;
     default:
       break;
@@ -257,50 +300,132 @@ void move(){
   ship2->move();
 }
 
+void speed_up(int mode){
+  if ( mode == TRANSLATE ){
+    // speed up heading velocity
+    if ( current_postion  == 0 ){
+      ship1->v += SHIP_TVEL_INC;
+    }
+    else if ( current_postion == 1) {
+      ship2->v += SHIP_TVEL_INC;
+    }
+  }
+  else if( mode == ROTATE ){
+    if( current_postion == 0 ){
+      ship1->vr += SHIP_RVEL_INC;
+    }
+    else if ( current_postion == 1 ){
+      ship2->vr += SHIP_RVEL_INC;
+    }
+  }
+  glutPostRedisplay();
+}
+
+void slow_down(int mode){
+  if ( mode == TRANSLATE ){
+    // speed up heading velocity
+    if ( current_postion  == 0 ){
+      ship1->v += SHIP_TVEL_DEC;
+    }
+    else if ( current_postion == 1) {
+      ship2->v += SHIP_TVEL_DEC;
+    }
+  }
+  else if( mode == ROTATE ){
+    if( current_postion == 0 ){
+      ship1->vr += SHIP_RVEL_DEC;
+    }
+    else if ( current_postion == 1 ){
+      ship2->vr += SHIP_RVEL_DEC;
+    }
+  }
+  glutPostRedisplay();  
+}
+void switch_ship(){
+  if ( current_postion == 0){
+    current_postion = 1;
+  }
+  else{
+    current_postion = 0;
+  }
+  glutPostRedisplay();
+}
 
 void change_view_position(){
   if( current_postion == 0){
     // eye on ship1
-    x_view = ship1->px;
-    y_view = ship1->py;
-    z_view = ship1->pz;
+    x_view = ship1->dx + ship1->px;
+    y_view = ship1->dy + ship1->py;
+    z_view = ship1->dz + ship1->pz;
   }
   else{
-    x_view = ship2->px;
-    y_view = ship2->py;
-    z_view = ship2->pz;    
+    x_view = ship2->dx + ship2->px;
+    y_view = ship2->dy + ship2->py;
+    z_view = ship2->dz + ship2->pz;    
   }   
 }
 
-void timer(int id){
+
+void change_eye_position(){
+  if( current_postion == 0){
+    // eye on ship1
+    x_eye = ship1->px;
+    y_eye = ship1->py;
+    z_eye = ship1->pz;
+
+  }
+  else{
+    x_eye = ship2->px;
+    y_eye = ship2->py;
+    z_eye = ship2->pz;
+    
+  }   
+}
+
+void pause_game(){
+  if ( game_state != PAUSE ){
+    game_state = PAUSE;
+  }
+  else{
+    game_state = RUNNING;
+  }
+}
+
+void debug(){
+  ship1->display();
+  ship2->display();
+}
+
+void step_game(){
+  if ( game_state != STEP ){
+    game_state = STEP;
+  }
   move();
+  debug();
+  glutPostRedisplay();
+}
+
+void timer(int id){
+  if( game_state == RUNNING){
+    move();    
+  }
+  change_eye_position();
   change_view_position();
   glutPostRedisplay();
   glutTimerFunc(TIMER_TOGGLE,timer,0);
   
 }
 
-void change_eye_position(){
-  if( current_postion == 0){
-    // eye on ship1
-    current_postion = 1;
-    x_eye = ship2->px;
-    y_eye = ship2->py;
-    z_eye = ship2->pz;
-
-  }
-  else{
-    current_postion = 0;
-    x_eye = ship1->px;
-    y_eye = ship1->py;
-    z_eye = ship1->pz;
-  
-  }   
-}
 
 void mouse(int button, int state, int x, int y){
   if( button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
-    change_eye_position();
+    switch_ship();
+  }
+  if ( button == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN){
+    pause_game();
+  }
+  if ( button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN){
+    step_game();
   }
 }
 
