@@ -225,14 +225,26 @@ void draw_clouds(){
 void draw_ship(Ship* ship){
   glPushMatrix();
   glColor4fv(ship_color);
+
   // move to position
   glTranslatef(ship->px,ship->py,ship->pz);
+
+  // find heading direction
+  glRotatef(ship->dx,1.0,0.0,0.0);
+  glRotatef(ship->dy,0.0,1.0,0.0);
+  glRotatef(ship->dz,0.0,0.0,1.0);
+  glRotatef(90,0.0,0.0,1.0);
+
+
   // do self rotation
   glRotatef(ship->angel,1.0,0.0,0.0);
+
   // draw horizontal torus
   glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
+
   // draw vertical torus
   glRotatef(90,1.0,0.0,0.0);
+
   glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
   glPopMatrix();
 }
