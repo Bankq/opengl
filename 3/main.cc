@@ -116,7 +116,7 @@ GLfloat cloud_colors[NO_CLOUDS][3]={{0.30, 0.30, 0.30},
          {1.00, 1.00, 0.00},
          {1.00, 0.00, 1.00},
          {0.00, 1.00, 1.00},
-         {1.00, 1.00, 1.00}};
+         {0.99, 1.00, 1.00}};
            
 /*ship coordinates for all ships, (x,y,z) for each ship*/
 GLfloat ship_coords[NO_SHIPS][3]={{100.0,10.0,10.0},
@@ -135,6 +135,7 @@ GLfloat ship_headings[NO_SHIPS]={0.0, 180.0};
 
 Ship* ship1;
 Ship* ship2;
+
 
 
 /****************************/
@@ -205,7 +206,7 @@ void init(void){
 void draw_ground(){
   glPushMatrix();
   glColor3f(0.0,0.0,0.0);
-  glRectf(-500.0,-500.0,500.0,500.0);
+  glRectf(-999999.0,-999999.0,999999.0,999999.0);
   glPopMatrix();
 }
 
@@ -230,14 +231,14 @@ void draw_ship(Ship* ship){
   glTranslatef(ship->px,ship->py,ship->pz);
 
   // find heading direction
-  glRotatef(ship->dx,1.0,0.0,0.0);
-  glRotatef(ship->dy,0.0,1.0,0.0);
-  glRotatef(ship->dz,0.0,0.0,1.0);
-  glRotatef(90,0.0,0.0,1.0);
+  //glRotatef(ship->dx,1.0,0.0,0.0);
+  //glRotatef(ship->dy,0.0,1.0,0.0);
+  //glRotatef(ship->dz,0.0,0.0,1.0);
+  //glRotatef(90,0.0,0.0,1.0);
 
 
   // do self rotation
-  glRotatef(ship->angel,1.0,0.0,0.0);
+  glRotatef(ship->angle,1.0,0.0,0.0);
 
   // draw horizontal torus
   glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
