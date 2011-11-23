@@ -1,0 +1,136 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+Hang Qian
+\end_layout
+
+\begin_layout Standard
+CSC630- Interactive Computer Graphic
+\end_layout
+
+\begin_layout Standard
+Assignment 3
+\end_layout
+
+\begin_layout Title
+Spaceship
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+In this assignment I implement a motion simulator for a pair of objects
+ (space ships) flying amidst a collection of colored spherical objects (clouds).
+\end_layout
+
+\begin_layout Standard
+The ships are controlled through input from the keyboard.
+ Each ship is drawn as a union of a vertical torus and a horizontal torus.
+ Torus is a geometric shape that resembles a donut.
+ Each ship is associated with a translational velocity (in distance/unittime)
+ and a rotational velocity (in degrees/unittime).
+ The viewer is positioned in one of these space ships.
+ By clicking left mouse button, the program switches the viewpoint from
+ one space ship to the other (i.e.
+ you beam yourself to the other ship).
+ When sitting in one space ship, you can observe the other ship as it moves.
+ In addition to the ships, there are a collection of spherical clouds and
+ a large square patch which forms the ground over which ships are flying.
+\end_layout
+
+\begin_layout Section
+Instruction
+\end_layout
+
+\begin_layout Itemize
+Left mouse button: switch between two space ships.
+\end_layout
+
+\begin_layout Itemize
+Middle mouse button: pause and resume the game.
+\end_layout
+
+\begin_layout Itemize
+Right mouse button: move one step and output all information to standard
+ output.
+\end_layout
+
+\begin_layout Itemize
+'a': speed up the heading velocity of current ship.
+\end_layout
+
+\begin_layout Itemize
+'s': slow down the heading velocity of current ship.
+\end_layout
+
+\begin_layout Itemize
+'l': speed up the spinning velocity of current ship.
+\end_layout
+
+\begin_layout Itemize
+'k': slow down the spinning velocity of current ship.
+\end_layout
+
+\end_body
+\end_document

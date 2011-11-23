@@ -262,6 +262,9 @@ void draw_ships(){
 void display(){
   glClear(GL_COLOR_BUFFER_BIT);
   glLoadIdentity(); 
+  /*gluLookAt (x_eye, y_eye, z_eye, 
+            x_view,y_view,z_view,
+            0.0, 0.0, 1.0);*/
   gluLookAt(x_eye,y_eye,z_eye,
             x_view,y_view,z_view,
             0.0,0.0,1.0);
