@@ -317,7 +317,8 @@ void display(){
   //  gluLookAt(0.0,0.0,5.0,0.0,0.0,0.0,0.0,1.0,0.0);
   glPushMatrix();
   glRotatef(spin,1.0,1.0,1.0);
-  glLightfv(GL_LIGHT1,GL_POSITION,light_postition);
+  GLfloat pos[] = {ship1->px,ship1->py,ship1->pz};
+  glLightfv(GL_LIGHT1,GL_POSITION,pos);
   glPopMatrix();
   glPopMatrix();
 
