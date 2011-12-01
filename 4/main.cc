@@ -137,12 +137,12 @@ GLfloat ship_headings[NO_SHIPS]={0.0, 180.0};
 
 /*lighting*/
 GLfloat light_postition[] = {1.0,1.0,0.0,0};
-GLfloat ambient_color[] = {0.0,0.0,0.0,1.0};
+GLfloat ambient_color[] = {0.2,0.2,0.2,1.0};
 GLfloat diffuse_color[] = {1.0,1.0,1.0,1.0};
-GLfloat specular_color[] = {1.0,1.0,1.0,1.0};
+GLfloat specular_color[] = {2.0,2.0,2.0,1.0};
 GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0};
 GLfloat mat_emission[] = { 0.0,0.0,0.0,0.0,1.0};
-GLfloat mat_shininess[] = { 50.0 };
+GLfloat mat_shininess[] = { 100.0 };
 
 Ship* ship1;
 Ship* ship2;
@@ -192,16 +192,22 @@ void init(void){
   glLightfv(GL_LIGHT0,GL_DIFFUSE,diffuse_color);
   glLightfv(GL_LIGHT0,GL_SPECULAR,specular_color);
 	  
+  glLightfv(GL_LIGHT0,GL_POSITION,light_postition);
+  glLightfv(GL_LIGHT0,GL_AMBIENT,ambient_color);
+  glLightfv(GL_LIGHT0,GL_DIFFUSE,diffuse_color);
+  glLightfv(GL_LIGHT0,GL_SPECULAR,specular_color);
 
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
+  glEnable(GL_LIGHT1);
+
   glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,mat_shininess);
   glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_specular);
   glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,mat_emission);
   //  glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,
   
-glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
-  
+  glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+ 
 
 
 
@@ -238,6 +244,7 @@ glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
   z_view = ship1->dz + ship1->pz;
 
   current_postion = 0;
+  spin = 0 ;
 
 }
 
@@ -306,6 +313,14 @@ void display(){
 
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
   
+  glPushMatrix();
+  //  gluLookAt(0.0,0.0,5.0,0.0,0.0,0.0,0.0,1.0,0.0);
+  glPushMatrix();
+  glRotatef(spin,1.0,1.0,1.0);
+  glLightfv(GL_LIGHT1,GL_POSITION,light_postition);
+  glPopMatrix();
+  glPopMatrix();
+
   glLoadIdentity(); 
   gluLookAt(x_eye,y_eye,z_eye,
             x_view,y_view,z_view,
@@ -354,6 +369,7 @@ void keyboard(unsigned char key, int x, int y){
 void move(){
   ship1->move();
   ship2->move();
+  spin  = ( spin + 30 ) % 360;
 }
 
 void speed_up(int mode){
