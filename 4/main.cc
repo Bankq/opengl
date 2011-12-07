@@ -2,7 +2,7 @@
 * Author: Hang Qian
 * Email: hq577780@sju.edu
 * 
-* This is the homework 3 of CSC630-Interactive 
+* This is the homework 4 of CSC630-Interactive 
 * Comupter Graphic of 2011 fall.
 *
 *    
@@ -144,6 +144,8 @@ GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0};
 GLfloat mat_emission[] = { 0.0,0.0,0.0,0.0,1.0};
 GLfloat mat_shininess[] = { 100.0 };
 
+static GLint fogMode;
+
 Ship* ship1;
 Ship* ship2;
 
@@ -209,7 +211,22 @@ void init(void){
   glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
  
 
+  /* add fog here */
+  glEnable(GL_FOG);
+  {
+	GLfloat fogColor[] = {0.5,0.5,0.5,1.0};
 
+	fogMode = GL_EXP2;//GL_EXP;
+	glFogi(GL_FOG_MODE,fogMode);
+	glFogi(GL_FOG_INDEX,32);
+	glFogfv(GL_FOG_COLOR,fogColor);
+	glFogf(GL_FOG_DENSITY,0.35);
+	glHint(GL_FOG_HINT, GL_NICEST);
+	glFogf(GL_FOG_START,1.0);
+	glFogf(GL_FOG_END, 5.0);
+	glClearIndex((GLfloat) 17);
+
+  }
 
   glEnable(GL_LINE_SMOOTH);
    glDepthFunc(GL_LEQUAL);
@@ -345,25 +362,50 @@ void reshape(int w, int h){
 
 void keyboard(unsigned char key, int x, int y){
   switch(key){
-    case 'q':
-      exit(0);
-    case 'p':
-      pause_game();
-      break;
-    case 'a':
-      speed_up(TRANSLATE);
-      break;
-    case 's':
-      slow_down(TRANSLATE);
-      break;
-    case 'l':
-      speed_up(ROTATE);
-      break;
-    case 'k':
-      slow_down(ROTATE);
-      break;
-    default:
-      break;
+  case 'q':
+	exit(0);
+  case 'p':
+	pause_game();
+	break;
+  case 'a':
+	speed_up(TRANSLATE);
+	break;
+  case 's':
+	slow_down(TRANSLATE);
+	break;
+  case 'l':
+	speed_up(ROTATE);
+	break;
+  case 'k':
+	slow_down(ROTATE);
+	break;
+  case 'f':
+  case 'F':
+	if( fogMode == GL_EXP){
+	  fogMode = GL_EXP2;
+	  printf("Fog mode is GL_EXP2\n");
+	}
+	else if ( fogMode == GL_EXP2){
+	  fogMode = GL_LINEAR;
+	  printf("Fog mode is GL_LINEAR\n");
+	}
+	else if ( fogMode == GL_LINEAR){
+	  fogMode = GL_EXP;
+	  printf("Fog mode is GL_EXP\n");
+	}
+	glFogi(GL_FOG_MODE,fogMode);
+	glutPostRedisplay();
+	break;
+  case 'y':
+	glDisable(GL_FOG);
+	glutPostRedisplay();
+	break;
+  case 'u':
+	glEnable(GL_FOG);
+	glutPostRedisplay();
+	break;
+  default:
+	break;
   }
 }
 

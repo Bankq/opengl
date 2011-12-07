@@ -83,6 +83,8 @@ float x_eye;
 float y_eye;
 float z_eye;
 
+int spin;
+
 int current_postion;
 int game_state;
 
@@ -133,6 +135,14 @@ GLfloat ship_velocities[NO_SHIPS][2]={{0.0,2.0},
 GLfloat ship_headings[NO_SHIPS]={0.0, 180.0};
 
 
+/*lighting*/
+GLfloat light_postition[] = {1.0,1.0,0.0,0};
+GLfloat ambient_color[] = {0.2,0.2,0.2,1.0};
+GLfloat diffuse_color[] = {1.0,1.0,1.0,1.0};
+GLfloat specular_color[] = {2.0,2.0,2.0,1.0};
+GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0};
+GLfloat mat_emission[] = { 0.0,0.0,0.0,0.0,1.0};
+GLfloat mat_shininess[] = { 100.0 };
 
 Ship* ship1;
 Ship* ship2;
@@ -169,10 +179,43 @@ void slow_down(int mode);
 
 
 void init(void){
-  glEnable(GL_LINE_SMOOTH);
+
 
   glClearColor(1,1,1,1);
   glShadeModel(GL_SMOOTH);
+  //  glColorMaterial( GL_FRONT_AND_BACK, GL_EMISSION );
+  
+
+
+  glLightfv(GL_LIGHT0,GL_POSITION,light_postition);
+  glLightfv(GL_LIGHT0,GL_AMBIENT,ambient_color);
+  glLightfv(GL_LIGHT0,GL_DIFFUSE,diffuse_color);
+  glLightfv(GL_LIGHT0,GL_SPECULAR,specular_color);
+	  
+  glLightfv(GL_LIGHT0,GL_POSITION,light_postition);
+  glLightfv(GL_LIGHT0,GL_AMBIENT,ambient_color);
+  glLightfv(GL_LIGHT0,GL_DIFFUSE,diffuse_color);
+  glLightfv(GL_LIGHT0,GL_SPECULAR,specular_color);
+
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_LIGHT1);
+
+  glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,mat_shininess);
+  glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_specular);
+  glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,mat_emission);
+  //  glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,
+  
+  glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+ 
+
+
+
+  glEnable(GL_LINE_SMOOTH);
+   glDepthFunc(GL_LEQUAL);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_COLOR_MATERIAL);
+
 
   //Initialize the two ships
   ship1 = new Ship(ship_coords[0][0],
@@ -201,6 +244,7 @@ void init(void){
   z_view = ship1->dz + ship1->pz;
 
   current_postion = 0;
+  spin = 0 ;
 
 }
 
@@ -219,7 +263,7 @@ void draw_clouds(){
     glTranslatef(cloud_coords[i][0],
                  cloud_coords[i][1],
                  cloud_coords[i][2]);
-    glutWireSphere(SPHERERADIUS,NO_SLICES,NO_STACKS);
+    glutSolidSphere(SPHERERADIUS,NO_SLICES,NO_STACKS);
     glPopMatrix();
   }
 }
@@ -242,25 +286,42 @@ void draw_ship(Ship* ship){
   glRotatef(ship->angle,1.0,0.0,0.0);
 
   // draw horizontal torus
-  glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
+  glutSolidTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
 
   // draw vertical torus
   glRotatef(90,1.0,0.0,0.0);
 
-  glutWireTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
+  glutSolidTorus(INNER,OUTER,NO_SIDES,NO_RINGS);
   glPopMatrix();
 }
 
 void draw_ships(){
-  draw_ship(ship1);
-  draw_ship(ship2);
+  if(current_postion == 1){
+	draw_ship(ship1);
+	draw_ship(ship2);
+  }
+  else{
+	draw_ship(ship2);
+	draw_ship(ship1);
+  }
 
 }
 
 
 
 void display(){
-  glClear(GL_COLOR_BUFFER_BIT);
+
+  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+  
+  glPushMatrix();
+  //  gluLookAt(0.0,0.0,5.0,0.0,0.0,0.0,0.0,1.0,0.0);
+  glPushMatrix();
+  glRotatef(spin,1.0,1.0,1.0);
+  GLfloat pos[] = {ship1->px,ship1->py,ship1->pz};
+  glLightfv(GL_LIGHT1,GL_POSITION,pos);
+  glPopMatrix();
+  glPopMatrix();
+
   glLoadIdentity(); 
   gluLookAt(x_eye,y_eye,z_eye,
             x_view,y_view,z_view,
@@ -309,6 +370,7 @@ void keyboard(unsigned char key, int x, int y){
 void move(){
   ship1->move();
   ship2->move();
+  spin  = ( spin + 30 ) % 360;
 }
 
 void speed_up(int mode){
